@@ -1,0 +1,98 @@
+import tkinter as tk
+from tkinter import messagebox
+import csv
+import os
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Functions:
+def piechart(exp, lab):
+    non_zero_exp = [exp[i] for i in range(len(exp)) if exp[i] > 0]
+    non_zero_lab = [lab[i] for i in range(len(exp)) if exp[i] > 0]
+
+    p = np.array(non_zero_exp)
+    plt.pie(p, labels=non_zero_lab)
+    plt.show()
+
+def save_to_csv(filename, expenses, labels):
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Category", "Amount"])
+        for label, expense in zip(labels, expenses):
+            writer.writerow([label, expense])
+
+def load_from_csv(filename):
+    expenses, labels = [], []
+    with open(filename, mode='r') as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            labels.append(row[0])
+            expenses.append(float(row[1]))
+    return expenses, labels
+
+# Create the main GUI window
+root = tk.Tk()
+root.title("Expense Tracker")
+
+# Load existing expenses if available
+try:
+    expenses, label = load_from_csv('expenses.csv')
+except FileNotFoundError:
+    expenses, label = [], []
+
+# Create labels and entry fields
+category_label = tk.Label(root, text="Category:")
+category_entry = tk.Entry(root)
+amount_label = tk.Label(root, text="Amount:")
+amount_entry = tk.Entry(root)
+
+category_label.pack()
+category_entry.pack()
+amount_label.pack()
+amount_entry.pack()
+
+# Function to add expenses
+def add_expense():
+    category = category_entry.get().strip()
+    amount = float(amount_entry.get())
+    
+    if category:
+        if category in label:
+            index = label.index(category)
+            expenses[index] += amount
+        else:
+            label.append(category)
+            expenses.append(amount)
+        
+        save_to_csv('expenses.csv', expenses, label)
+        update_expenses_list()
+
+# Button to add expenses
+add_button = tk.Button(root, text="Add Expense", command=add_expense)
+add_button.pack()
+
+# Function to update the expenses list
+def update_expenses_list():
+    expenses_list.delete(0, tk.END)
+    for lbl, exp in zip(label, expenses):
+        expenses_list.insert(tk.END, f"{lbl}: {exp}")
+
+# Listbox to display expenses
+expenses_list = tk.Listbox(root, height=10, width=40)
+expenses_list.pack()
+update_expenses_list()
+
+# Button to show pie chart
+def show_pie_chart():
+    try:
+        piechart(expenses, label)
+    except ValueError:
+        messagebox.showinfo("Info", "Savings are not displayed in the pie chart.")
+
+show_pie_button = tk.Button(root, text="Show Pie Chart", command=show_pie_chart)
+show_pie_button.pack()
+
+root.mainloop()
