@@ -1,4 +1,10 @@
 # Expense_Tracker
-A python program that helps users track their expenses, allows them to add, categorize, and analyze their spending habits.
-It uses libraries such as Matplotlib and CSV.
-It stores data in CSV file and uses it later as well while analyzing data. It has pre-defined categories.
+A python program for an Expense Tracker.
+Features: 
+- Tkinter GUI Interface
+- Plots a Pie Chart of the expenses
+- Shows how much percentage of the budget is going in which sectors
+- Shows total money spent
+- Gives a dropdown menu of the categories
+
+Thank you!!
