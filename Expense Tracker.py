@@ -1,160 +1,67 @@
-# Use code to see stored csv file.
+# Importing necessary libraries
+import tkinter as tk
+from tkinter import ttk
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+# Declaring a Class
+class ExpenseTracker(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Expense Tracker")
+        self.geometry("525x1000")    
+        self.configure(bg='lavender')
+        self.expenses = {}
+        self.total_expense = 0
+        self.create_widgets()
 
-import os
+    def create_widgets(self):
+        self.category_label = ttk.Label(self, text="Category:")
+        self.category_label.grid(row=0, column=0, padx=10, pady=10)
 
-current_directory = os.getcwd()
-csv_file_path = os.path.join(current_directory, 'expenses.csv')
+        self.categories = ['Rent','Groceries','Transportation','Bills','Essentials','Entertainment','Savings','Miscellaneous']
+        self.category_var = tk.StringVar()
+        self.category_var.set(self.categories[0])
+        self.category_dropdown = ttk.Combobox(self, textvariable=self.category_var, values=self.categories, state='readonly')
+        self.category_dropdown.grid(row=0, column=1, padx=10, pady=10)
 
-print("CSV file is stored at:", csv_file_path)
+        self.expense_label = ttk.Label(self, text="Expense:")
+        self.expense_label.grid(row=1, column=0, padx=10, pady=10)
 
+        self.expense_entry = ttk.Entry(self, width=30)
+        self.expense_entry.grid(row=1, column=1, padx=10, pady=10)
 
-# Functions:
-def piechart(exp, lab):  # Used later in the options given to user
-    import sys
-    import matplotlib
-    matplotlib.use('TkAgg')
-   
-    import matplotlib.pyplot as plt
-    import numpy as np
+        self.add_button = ttk.Button(self, text="Add Expense", command=self.add_expense)
+        self.add_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-    # Filter out categories with zero expenses
-    non_zero_exp = [exp[i] for i in range(len(exp)) if exp[i] > 0]
-    non_zero_lab = [lab[i] for i in range(len(exp)) if exp[i] > 0]
+        self.total_expense_label = ttk.Label(self, text="Total Expense: 0")
+        self.total_expense_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
-    p = np.array(non_zero_exp)
-    plt.pie(p, labels=non_zero_lab)
-    plt.show()
+        self.figure = Figure(figsize=(5, 5))
+        self.ax = self.figure.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.figure, self)
+        self.canvas.get_tk_widget().grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
-def method_of_payment(x, y):  # Used later in the options given to user
-    import sys
-    import matplotlib
-    matplotlib.use('TkAgg')
+        self.quit_button = ttk.Button(self, text="Quit", command=self.quit)
+        self.quit_button.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
 
-    import matplotlib.pyplot as plt
-    import numpy as np
+    def add_expense(self):
+        category = self.category_var.get()
+        expense = float(self.expense_entry.get())
+        self.expenses[category] = self.expenses.get(category, 0) + expense
+        self.total_expense += expense
 
-    plt.bar(x, y)
-    plt.show()
+        # Update the total expense label
+        self.total_expense_label.config(text=f"Total Expense: {self.total_expense}")
 
-# To save the data in a CSV file
-import csv
+        # Update the pie chart
+        self.ax.clear()
+        self.ax.pie(self.expenses.values(), labels=self.expenses.keys(), autopct='%1.1f%%')
+        self.canvas.draw()
 
-def save_to_csv(filename, expenses, labels, methods):
-    with open(filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
+        # Clear the entry field
+        self.expense_entry.delete(0, tk.END)
 
-        writer.writerow(["Category", "Amount", "Method of Payment"])
-        for label, expense, method in zip(labels, expenses, methods):
-            writer.writerow([label, expense, method])
-
-def load_from_csv(filename):
-    expenses, labels, methods = [], [], []
-    with open(filename, mode='r') as file:
-        reader = csv.reader(file)
-        next(reader)  
-        for row in reader:
-            labels.append(row[0])
-            expenses.append(float(row[1]))
-            methods.append(row[2])
-    return expenses, labels, methods
-
-def load_categories_from_csv(filename):
-    categories = []
-    with open(filename, mode='r') as file:
-        reader = csv.reader(file)
-        next(reader)  
-        for row in reader:
-            categories.append(row[0])
-    return categories
-
-print("Welcome to your Personal Expense Tracker. \nLet's track Expenses!!\n")
-
-expenses, label, methods = [],[],[] #Defining lists used in the code.
-
-spendings = 0
-budget = float(input("Enter your budget: "))
-n = int(input("How many categories do you want to divide your expenses into: "))
-
-try:
-    expenses, label, methods = load_from_csv('expenses.csv')
-    spendings = sum(expenses)
-except FileNotFoundError:
-    pass
-
-existing_categories = load_categories_from_csv('expenses.csv')
-print("Do you want to any of the pre-defined categories?")  # Asks user if they want to use a pre=defined category
-for i, category in enumerate(existing_categories, start=1):
-    print(f"{i}. {category}")
-print(f"{len(existing_categories) + 1}. No, create a new category")
-
-for i in range(n):
-    reuse_choice = int(input("\nEnter your choice: ")) # Choice Menu
-
-    if 1 <= reuse_choice <= len(existing_categories):
-        chosen_category = existing_categories[reuse_choice - 1]
-        print(f"\nYou chose : {chosen_category}")
-
-        if chosen_category in label:
-            index = label.index(chosen_category)
-            exp = float(input("Amount expensed: "))
-            expenses[index] += exp
-            spendings += exp
-            meth = input("Method of Payment: ")
-            methods[index] = meth
-        else:
-            exp = float(input("Amount expensed: "))
-            expenses.append(exp)
-            label.append(chosen_category)
-            spendings += exp
-            meth = input("Method of Payment: ")
-            methods.append(meth)
-        save_to_csv('expenses.csv', expenses, label, methods)
-    else:
-        name = input("\nEnter the category name: ")
-        caps = name.capitalize()
-        label.append(caps)
-        exp = float(input("Amount expensed: "))
-        expenses.append(exp)
-        spendings += exp
-        meth = input("Method of Payment: ")
-        methods.append(meth)
-        save_to_csv('expenses.csv', expenses, label, methods)
-
-print("\nSelect an option:") #Choice Menu
-print("1. Analyze budget.")
-print("2. See a detailed analysis of your expenses")
-print("3. See a detailed analysis with respect to payment methods ")
-print("4. Exit.")
-
-while True:                          # Will repeat till user chooses to leave.
-    choice = int(input("\nEnter your choice.. "))
-    if choice == 1:
-        saved = budget - spendings
-        label.append("Savings")
-        expenses.append(saved)
-        listlen = len(label)
-        for j in range(listlen):
-            print(label[j], ":", expenses[j])
-
-        if spendings > budget:
-            print("You have spent", spendings - budget, "more than your budget. Please try to reduce your spendings.")
-        elif spendings < budget:
-            print("Congratulations!! You saved ", saved, ".\nKeep it up.")
-        elif spendings == budget:
-            print("You have exhausted your budget. Please try to save some amount.")
-    elif choice == 2:                                   # Plots a pie-chart of expenses and labels the categories
-        try:
-            piechart(expenses, label)
-        except ValueError:
-            print("\nAs your spendings are more than your budget, You were analyzed based on your expenses and not your budget.")
-            label.remove("Savings")
-            expenses.pop(-1)
-            piechart(expenses, label)
-    elif choice == 3:                                   # Plots a barplot of methods vs expenses
-        method_of_payment(methods, expenses)
-
-    elif choice == 4:                                   # Exits menu and prints Thank you.
-        break
-
-print("Thank you for using this expense tracker.")
+if __name__ == "__main__":
+    app = ExpenseTracker()
+    app.mainloop()
